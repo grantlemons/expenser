@@ -3,6 +3,14 @@ name = "invoice"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "server"
+path = "src/server/server.rs"
+
+[lib]
+name = "invoice"
+path = "src/lib/lib.rs"
+
 [dependencies]
 anyhow = "1.0.71"
 argon2 = "0.5.0"
