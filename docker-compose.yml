@@ -1,4 +1,22 @@
 services:
+  database:
+    container_name: database
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - ${DATABASE_PORT}:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - database-data:/var/lib/postgresql/data
   backend:
     container_name: backend
     depends_on:
@@ -6,16 +24,18 @@ services:
     volumes:
       - ./logs/:/logs/:rw
     environment:
-      - ENV=DOCKER
-      - DB_PASS=test
-      - DB_ADDRESS=database
+      ENV: DOCKER
+      DATABASE_URL: ${DATABASE_URL}
     build:
       dockerfile: Dockerfile
     ports:
-      - 0.0.0.0:81:3000
+      - 0.0.0.0:${BACKEND_PORT}:3000
     healthcheck:
       test: curl -X GET --fail https://0.0.0.0:80/api/health -Is --insecure || exit 1
       interval: 10s
       timeout: 1s
       retries: 5
       start_period: 2s
+
+volumes:
+  database-data: {}
