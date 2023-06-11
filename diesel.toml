@@ -1,0 +1,5 @@
+[print_schema]
+file = "src/lib/schema.rs"
+with_docs = true
+generate_missing_sql_type_definitions = true
+custom_type_derives = ["diesel::sql_types::SqlType", "std::fmt::Debug"]
