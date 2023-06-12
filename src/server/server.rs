@@ -11,31 +11,34 @@ mod handlers {
     pub(crate) use info::*;
 }
 mod logger;
+mod state;
+pub use state::AppState;
 
 const PORT: u16 = 3000;
 const LOCALHOST: [u8; 4] = [0, 0, 0, 0];
 
-fn app() -> Router {
+fn api() -> Result<Router> {
     #[allow(unused_imports)]
     use axum::routing::{delete, get, post, put};
     use handlers::*;
 
-    let routes: Router = Router::new()
+    let router = Router::new()
         .route("/health", get(health)) // Health check
-        .route("/info", get(info));
+        .route("/info", get(info))
+        .with_state(AppState::init()?);
 
-    Router::new().nest("/api", routes)
-    // .layer(axum::middleware::from_fn(auth))
-    // .with_state(state)
+    Ok(router)
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     logger::setup()?;
 
+    let app = Router::new().nest("/api", api()?);
+
     let addr = std::net::SocketAddr::from((LOCALHOST, PORT));
     axum::Server::bind(&addr)
-        .serve(app().into_make_service())
+        .serve(app.into_make_service())
         .await?;
 
     Ok(())

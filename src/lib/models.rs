@@ -22,34 +22,6 @@ pub struct NewUser<'a> {
     pub password_hash: &'a str,
 }
 
-impl User {
-    pub fn new(conn: &mut PgConnection, username: &str, email: &str, password: &str) -> Self {
-        use argon2::{
-            password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
-            Argon2,
-        };
-
-        let salt = SaltString::generate(&mut OsRng);
-        let argon2 = Argon2::default();
-        let hash = argon2
-            .hash_password(password.as_bytes(), &salt)
-            .expect("Hashing function failed")
-            .to_string();
-
-        let new_user = NewUser {
-            username,
-            email,
-            profile_picture: None,
-            password_hash: &hash,
-        };
-        diesel::insert_into(users::table)
-            .values(&new_user)
-            .returning(Self::as_returning())
-            .get_result(conn)
-            .expect("Error creating new user")
-    }
-}
-
 #[derive(Queryable, Selectable, Identifiable, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(invoice_id))]

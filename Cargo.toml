@@ -18,6 +18,7 @@ axum = "0.6.18"
 axum-server = { version = "0.5.1", features = ["tls-rustls"] }
 chrono = "0.4.26"
 diesel = { version = "2.1.0", features = ["postgres", "r2d2"] }
+diesel_migrations = "2.1.0"
 dotenvy = "0.15.7"
 fern = { version = "0.6.2", features = ["chrono", "colored"] }
 log = "0.4.18"
