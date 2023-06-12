@@ -12,25 +12,34 @@ pub fn run_migrations(connection: &mut impl MigrationHarness<Pg>) {
     connection
         .run_pending_migrations(MIGRATIONS)
         .expect("Unable to run migrations on database");
+    log::info!("Ran migrations on database for startup");
 }
 
 pub fn get_connection(
     pool: &Pool<ConnectionManager<PgConnection>>,
 ) -> Result<PooledConnection<ConnectionManager<PgConnection>>> {
-    pool.get().context("Unable to get connection from pool")
+    let conn = pool.get().context("Unable to get connection from pool");
+    log::trace!("Got database connection from pool");
+
+    conn
 }
 
 pub fn pool() -> Result<Pool<ConnectionManager<PgConnection>>> {
-    let _ = dotenv();
+    match dotenv() {
+        Ok(_) => log::info!("Loaded info from dotenv"),
+        Err(err) => log::error!("Unable to load info from dotenv: \"{}\"", err),
+    }
 
     let database_url = std::env::var("DATABASE_URL").context("DATABASE_URL not set")?;
     let manager = ConnectionManager::<PgConnection>::new(database_url);
-    // Refer to the `r2d2` documentation for more methods to use
-    // when building a connection pool
-    Pool::builder()
+
+    let pool = Pool::builder()
         .test_on_check_out(true)
         .build(manager)
-        .context("Unable to establish connection pool")
+        .context("Unable to establish connection pool");
+    log::info!("Created connection pool");
+
+    pool
 }
 
 pub fn init() -> Result<Pool<ConnectionManager<PgConnection>>> {

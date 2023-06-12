@@ -6,14 +6,18 @@ use diesel::{
 use std::sync::Arc;
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct AppState {
     connection_pool: Pool<ConnectionManager<PgConnection>>,
 }
 
 impl AppState {
     pub fn init() -> Result<Arc<Self>> {
-        Ok(Arc::new(Self {
+        let state = Arc::new(Self {
             connection_pool: invoice::database::init()?,
-        }))
+        });
+        log::info!("Created new state object");
+
+        Ok(state)
     }
 }

@@ -40,6 +40,7 @@ async fn main() -> Result<()> {
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await?;
+    log::info!("Server running on port {}", PORT);
 
     Ok(())
 }

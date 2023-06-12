@@ -20,6 +20,7 @@ pub fn setup() -> Result<()> {
         .chain(fern::log_file(file_name).context("Unable to open log file")?)
         .apply()
         .context("Failed to dispatch logger")?;
+    log::info!("Configured fern logger");
 
     Ok(())
 }
