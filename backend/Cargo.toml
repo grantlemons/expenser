@@ -1,14 +1,15 @@
 [package]
-name = "invoice"
+name = "backend"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [[bin]]
 name = "server"
 path = "src/server/server.rs"
 
 [lib]
-name = "invoice"
+name = "invoicer"
 path = "src/lib/lib.rs"
 
 [dependencies]

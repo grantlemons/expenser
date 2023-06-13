@@ -1,0 +1,8 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+leptos = "0.3.0"

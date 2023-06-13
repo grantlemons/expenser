@@ -2,7 +2,7 @@ use anyhow::Result;
 use axum::Router;
 
 #[allow(unused_imports)]
-use invoice::*;
+use invoicer::*;
 
 mod handlers {
     /// Handlers for server info and health check
