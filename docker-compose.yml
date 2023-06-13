@@ -27,6 +27,7 @@ services:
       ENV: DOCKER
       DATABASE_URL: ${DATABASE_URL}
     build:
+      context: backend
       dockerfile: Dockerfile
     ports:
       - 0.0.0.0:${BACKEND_PORT}:3000
