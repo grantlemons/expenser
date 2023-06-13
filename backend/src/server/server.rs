@@ -30,12 +30,19 @@ fn api() -> Result<Router> {
     Ok(router)
 }
 
+fn load_dotenv() {
+    match dotenvy::dotenv() {
+        Ok(_) => log::info!("Loaded info from dotenv"),
+        Err(err) => log::error!("Unable to load info from dotenv: \"{}\"", err),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     logger::setup()?;
+    load_dotenv();
 
     let app = Router::new().nest("/api", api()?);
-
     let addr = std::net::SocketAddr::from((LOCALHOST, PORT));
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

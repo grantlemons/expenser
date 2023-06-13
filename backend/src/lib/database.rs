@@ -4,7 +4,6 @@ use diesel::{
     r2d2::{ConnectionManager, Pool, PooledConnection},
 };
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use dotenvy::dotenv;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
@@ -25,11 +24,6 @@ pub fn get_connection(
 }
 
 pub fn pool() -> Result<Pool<ConnectionManager<PgConnection>>> {
-    match dotenv() {
-        Ok(_) => log::info!("Loaded info from dotenv"),
-        Err(err) => log::error!("Unable to load info from dotenv: \"{}\"", err),
-    }
-
     let database_url = std::env::var("DATABASE_URL").context("DATABASE_URL not set")?;
     let manager = ConnectionManager::<PgConnection>::new(database_url);
 
@@ -46,7 +40,13 @@ pub fn init() -> Result<Pool<ConnectionManager<PgConnection>>> {
     let pool = pool()?;
     let conn = &mut get_connection(&pool)?;
 
-    run_migrations(conn);
+    let migrate: bool = std::env::var("MIGRATE")
+        .unwrap_or("false".to_owned())
+        .parse()?;
+    if migrate {
+        run_migrations(conn);
+        log::info!("Attempting to migrate")
+    }
 
     Ok(pool)
 }
