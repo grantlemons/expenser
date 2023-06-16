@@ -2,3 +2,10 @@
 
 members = ["backend", "frontend"]
 resolver = "2"
+
+# Optimization levels
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+opt-level = 3
