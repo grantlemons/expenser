@@ -29,12 +29,14 @@ pub struct NewUser<'a> {
 pub struct Invoice {
     pub invoice_id: i64,
     pub owner_id: i64,
+    pub title: String,
 }
 
 #[derive(Insertable, Debug, PartialEq)]
 #[diesel(table_name = invoices)]
-pub struct NewInvoice {
+pub struct NewInvoice<'a> {
     pub owner_id: i64,
+    pub title: &'a str,
 }
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
