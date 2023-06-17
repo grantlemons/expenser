@@ -21,9 +21,9 @@ mod model_implementations {
         }
     }
 
-    pub mod invoice;
-    pub mod invoice_line_item;
-    pub mod invoice_permissions;
-    pub mod invoice_proof;
+    pub mod report;
+    pub mod report_line_item;
+    pub mod report_permissions;
+    pub mod report_proof;
     pub mod user;
 }

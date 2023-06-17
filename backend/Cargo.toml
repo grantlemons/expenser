@@ -9,7 +9,7 @@ name = "server"
 path = "src/server/server.rs"
 
 [lib]
-name = "invoicer"
+name = "expenser"
 path = "src/lib/lib.rs"
 
 [dependencies]

@@ -14,7 +14,7 @@ pub struct AppState {
 impl AppState {
     pub fn init() -> Result<Arc<Self>> {
         let state = Arc::new(Self {
-            connection_pool: invoicer::database::init()?,
+            connection_pool: expenser::database::init()?,
         });
         log::info!("Created new state object");
 

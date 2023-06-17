@@ -1,18 +1,18 @@
 #![allow(dead_code)]
 
 use super::traits::*;
-use super::{Invoice, NewInvoice, User};
+use super::{NewReport, Report, User};
 use anyhow::Result;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
-pub struct NewInvoiceBuilder<'a> {
+pub struct NewReportBuilder<'a> {
     owner_id: Option<i64>,
     title: Option<&'a str>,
 }
 
-impl<'a> Builder<NewInvoice<'a>> for NewInvoiceBuilder<'a> {
-    type Output = NewInvoice<'a>;
+impl<'a> Builder<NewReport<'a>> for NewReportBuilder<'a> {
+    type Output = NewReport<'a>;
 
     fn build(&self) -> Option<Self::Output> {
         if let (Some(owner_id), Some(title)) = (self.owner_id, self.title) {
@@ -23,9 +23,9 @@ impl<'a> Builder<NewInvoice<'a>> for NewInvoiceBuilder<'a> {
     }
 }
 
-impl<'a> NewInvoiceBuilder<'a> {
+impl<'a> NewReportBuilder<'a> {
     pub fn owner(&'a mut self, owner: &User) -> &'a mut Self {
-        self.owner_id = Some(owner.user_id);
+        self.owner_id = Some(owner.id);
         self
     }
 
@@ -40,11 +40,11 @@ impl<'a> NewInvoiceBuilder<'a> {
     }
 }
 
-impl<'a> HasBuilder<NewInvoiceBuilder<'a>, Self> for NewInvoice<'a> {}
-impl<'a> NewInvoice<'a> {
-    pub fn insert(&self, _conn: &mut PgConnection) -> Result<Invoice> {
+impl<'a> HasBuilder<NewReportBuilder<'a>, Self> for NewReport<'a> {}
+impl<'a> NewReport<'a> {
+    pub fn insert(&self, _conn: &mut PgConnection) -> Result<Report> {
         todo!()
     }
 }
 
-impl<'a> HasBuilder<NewInvoiceBuilder<'a>, NewInvoice<'a>> for Invoice {}
+impl<'a> HasBuilder<NewReportBuilder<'a>, NewReport<'a>> for Report {}

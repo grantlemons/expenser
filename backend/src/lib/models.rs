@@ -3,10 +3,9 @@ use diesel::prelude::*;
 
 #[derive(Queryable, Selectable, Identifiable, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-#[diesel(primary_key(user_id))]
 #[diesel(table_name = users)]
 pub struct User {
-    pub user_id: i64,
+    pub id: i64,
     pub username: String,
     pub email: String,
     pub profile_picture: Option<Vec<u8>>,
@@ -24,61 +23,58 @@ pub struct NewUser<'a> {
 
 #[derive(Queryable, Selectable, Identifiable, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-#[diesel(primary_key(invoice_id))]
-#[diesel(table_name = invoices)]
-pub struct Invoice {
-    pub invoice_id: i64,
+#[diesel(table_name = reports)]
+pub struct Report {
+    pub id: i64,
     pub owner_id: i64,
     pub title: String,
 }
 
 #[derive(Insertable, Debug, PartialEq)]
-#[diesel(table_name = invoices)]
-pub struct NewInvoice<'a> {
+#[diesel(table_name = reports)]
+pub struct NewReport<'a> {
     pub owner_id: i64,
     pub title: &'a str,
 }
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-#[diesel(primary_key(proof_id))]
-#[diesel(belongs_to(Invoice))]
-#[diesel(table_name = invoice_proof)]
-pub struct InvoiceProof {
-    pub proof_id: i64,
-    pub invoice_id: i64,
+#[diesel(belongs_to(Report))]
+#[diesel(table_name = report_proof)]
+pub struct ReportProof {
+    pub id: i64,
+    pub report_id: i64,
     pub data: Vec<u8>,
 }
 
 #[derive(Insertable, Associations, Debug, PartialEq)]
-#[diesel(belongs_to(Invoice))]
-#[diesel(table_name = invoice_proof)]
-pub struct NewInvoiceProof<'a> {
-    pub invoice_id: i64,
+#[diesel(belongs_to(Report))]
+#[diesel(table_name = report_proof)]
+pub struct NewReportProof<'a> {
+    pub report_id: i64,
     pub data: &'a [u8],
 }
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-#[diesel(primary_key(access_id))]
 #[diesel(belongs_to(User, foreign_key = borrower_id))]
-#[diesel(belongs_to(Invoice))]
-#[diesel(table_name = invoice_permissions)]
-pub struct InvoicePermissions {
-    pub access_id: i64,
+#[diesel(belongs_to(Report))]
+#[diesel(table_name = report_permissions)]
+pub struct ReportPermissions {
+    pub id: i64,
     pub borrower_id: i64,
-    pub invoice_id: i64,
+    pub report_id: i64,
     pub read_access: bool,
     pub write_access: bool,
 }
 
 #[derive(Insertable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-#[diesel(belongs_to(Invoice))]
-#[diesel(table_name = invoice_permissions)]
-pub struct NewInvoicePermissions {
+#[diesel(belongs_to(Report))]
+#[diesel(table_name = report_permissions)]
+pub struct NewReportPermissions {
     pub borrower_id: i64,
-    pub invoice_id: i64,
+    pub report_id: i64,
     pub read_access: bool,
     pub write_access: bool,
 }
@@ -86,21 +82,21 @@ pub struct NewInvoicePermissions {
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
-#[diesel(belongs_to(Invoice))]
-#[diesel(table_name = invoice_line_items)]
-pub struct InvoiceLineItem {
+#[diesel(belongs_to(Report))]
+#[diesel(table_name = report_line_items)]
+pub struct ReportLineItem {
     pub id: i64,
-    pub invoice_id: i64,
+    pub report_id: i64,
     pub item_name: String,
     pub item_price_usd: diesel::data_types::Cents,
 }
 
 #[derive(Insertable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-#[diesel(belongs_to(Invoice))]
-#[diesel(table_name = invoice_line_items)]
-pub struct NewInvoiceLineItem<'a> {
-    pub invoice_id: i64,
+#[diesel(belongs_to(Report))]
+#[diesel(table_name = report_line_items)]
+pub struct NewReportLineItem<'a> {
+    pub report_id: i64,
     pub item_name: &'a str,
     pub item_price_usd: diesel::data_types::Cents,
 }
