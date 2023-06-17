@@ -89,18 +89,18 @@ pub struct NewInvoicePermissions {
 #[diesel(belongs_to(Invoice))]
 #[diesel(table_name = invoice_line_items)]
 pub struct InvoiceLineItem {
-    id: i64,
-    invoice_id: i64,
-    item_name: String,
-    item_price_usd: diesel::data_types::Cents,
+    pub id: i64,
+    pub invoice_id: i64,
+    pub item_name: String,
+    pub item_price_usd: diesel::data_types::Cents,
 }
 
 #[derive(Insertable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(Invoice))]
 #[diesel(table_name = invoice_line_items)]
-pub struct NewInvoiceLineItem {
-    invoice_id: i64,
-    item_name: String,
-    item_price_usd: diesel::data_types::Cents,
+pub struct NewInvoiceLineItem<'a> {
+    pub invoice_id: i64,
+    pub item_name: &'a str,
+    pub item_price_usd: diesel::data_types::Cents,
 }
