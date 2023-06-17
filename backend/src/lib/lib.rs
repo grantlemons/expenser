@@ -1,6 +1,8 @@
 pub mod database;
-pub mod models;
-pub mod schema;
+mod models;
+mod schema;
+
+pub use models::*;
 
 mod model_implementations {
     use super::models::*;
