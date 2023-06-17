@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+
+use super::traits::*;
 use super::{Invoice, InvoicePermissions, NewInvoicePermissions, User};
 use anyhow::Result;
 use diesel::PgConnection;
@@ -10,10 +13,12 @@ pub struct NewInvoicePermissionsBuilder {
     write_access: bool,
 }
 
-impl NewInvoicePermissionsBuilder {
-    pub fn build(&self) -> Option<NewInvoicePermissions> {
+impl Builder<NewInvoicePermissions> for NewInvoicePermissionsBuilder {
+    type Output = NewInvoicePermissions;
+
+    fn build(&self) -> Option<Self::Output> {
         if let (Some(borrower_id), Some(invoice_id)) = (self.borrower_id, self.invoice_id) {
-            Some(NewInvoicePermissions {
+            Some(Self::Output {
                 borrower_id,
                 invoice_id,
                 read_access: self.read_access,
@@ -23,7 +28,9 @@ impl NewInvoicePermissionsBuilder {
             None
         }
     }
+}
 
+impl NewInvoicePermissionsBuilder {
     pub fn borrower(&mut self, borrower: User) -> &mut Self {
         self.borrower_id = Some(borrower.user_id);
         self
@@ -55,14 +62,11 @@ impl NewInvoicePermissionsBuilder {
     }
 }
 
+impl HasBuilder<NewInvoicePermissionsBuilder, Self> for NewInvoicePermissions {}
 impl NewInvoicePermissions {
     pub fn insert(&self, _conn: &mut PgConnection) -> Result<InvoicePermissions> {
         todo!()
     }
 }
 
-impl InvoicePermissions {
-    pub fn builder() -> NewInvoicePermissionsBuilder {
-        NewInvoicePermissionsBuilder::default()
-    }
-}
+impl HasBuilder<NewInvoicePermissionsBuilder, NewInvoicePermissions> for InvoicePermissions {}

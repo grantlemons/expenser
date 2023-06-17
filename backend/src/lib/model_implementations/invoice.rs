@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+
+use super::traits::*;
 use super::{Invoice, NewInvoice, User};
 use anyhow::Result;
 use diesel::PgConnection;
@@ -8,15 +11,19 @@ pub struct NewInvoiceBuilder<'a> {
     title: Option<&'a str>,
 }
 
-impl<'a> NewInvoiceBuilder<'a> {
-    pub fn build(&self) -> Option<NewInvoice<'a>> {
+impl<'a> Builder<NewInvoice<'a>> for NewInvoiceBuilder<'a> {
+    type Output = NewInvoice<'a>;
+
+    fn build(&self) -> Option<Self::Output> {
         if let (Some(owner_id), Some(title)) = (self.owner_id, self.title) {
-            Some(NewInvoice { owner_id, title })
+            Some(Self::Output { owner_id, title })
         } else {
             None
         }
     }
+}
 
+impl<'a> NewInvoiceBuilder<'a> {
     pub fn owner(&'a mut self, owner: User) -> &'a mut Self {
         self.owner_id = Some(owner.user_id);
         self
@@ -33,14 +40,11 @@ impl<'a> NewInvoiceBuilder<'a> {
     }
 }
 
+impl<'a> HasBuilder<NewInvoiceBuilder<'a>, Self> for NewInvoice<'a> {}
 impl<'a> NewInvoice<'a> {
     pub fn insert(&self, _conn: &mut PgConnection) -> Result<Invoice> {
         todo!()
     }
 }
 
-impl Invoice {
-    pub fn builder<'a>() -> NewInvoiceBuilder<'a> {
-        NewInvoiceBuilder::default()
-    }
-}
+impl<'a> HasBuilder<NewInvoiceBuilder<'a>, NewInvoice<'a>> for Invoice {}

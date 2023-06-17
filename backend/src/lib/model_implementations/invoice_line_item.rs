@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+
+use super::traits::*;
 use super::{Invoice, InvoiceLineItem, NewInvoiceLineItem};
 use anyhow::Result;
 use diesel::PgConnection;
@@ -7,6 +10,24 @@ pub struct NewInvoiceLineItemBuilder<'a> {
     invoice_id: Option<i64>,
     item_name: Option<&'a str>,
     item_price_usd: Option<diesel::data_types::Cents>,
+}
+
+impl<'a> Builder<NewInvoiceLineItem<'a>> for NewInvoiceLineItemBuilder<'a> {
+    type Output = NewInvoiceLineItem<'a>;
+
+    fn build(&self) -> Option<Self::Output> {
+        if let (Some(invoice_id), Some(item_name), Some(item_price_usd)) =
+            (self.invoice_id, self.item_name, self.item_price_usd)
+        {
+            Some(Self::Output {
+                invoice_id,
+                item_name,
+                item_price_usd,
+            })
+        } else {
+            None
+        }
+    }
 }
 
 impl<'a> NewInvoiceLineItemBuilder<'a> {
@@ -35,14 +56,11 @@ impl<'a> NewInvoiceLineItemBuilder<'a> {
     }
 }
 
+impl<'a> HasBuilder<NewInvoiceLineItemBuilder<'a>, Self> for NewInvoiceLineItem<'a> {}
 impl<'a> NewInvoiceLineItem<'a> {
     pub fn insert(&self, _conn: &mut PgConnection) -> Result<InvoiceLineItem> {
         todo!()
     }
 }
 
-impl InvoiceLineItem {
-    pub fn builder<'a>() -> NewInvoiceLineItemBuilder<'a> {
-        NewInvoiceLineItemBuilder::default()
-    }
-}
+impl<'a> HasBuilder<NewInvoiceLineItemBuilder<'a>, NewInvoiceLineItem<'a>> for InvoiceLineItem {}
