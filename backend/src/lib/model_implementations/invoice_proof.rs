@@ -24,7 +24,7 @@ impl<'a> Builder<NewInvoiceProof<'a>> for NewInvoiceProofBuilder<'a> {
 }
 
 impl<'a> NewInvoiceProofBuilder<'a> {
-    pub fn invoice(&'a mut self, invoice: Invoice) -> &'a mut Self {
+    pub fn invoice(&'a mut self, invoice: &Invoice) -> &'a mut Self {
         self.invoice_id = Some(invoice.invoice_id);
         self
     }

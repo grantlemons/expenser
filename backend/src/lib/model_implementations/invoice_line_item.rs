@@ -31,7 +31,7 @@ impl<'a> Builder<NewInvoiceLineItem<'a>> for NewInvoiceLineItemBuilder<'a> {
 }
 
 impl<'a> NewInvoiceLineItemBuilder<'a> {
-    pub fn invoice(&mut self, invoice: Invoice) -> &mut Self {
+    pub fn invoice(&mut self, invoice: &Invoice) -> &mut Self {
         self.invoice_id = Some(invoice.invoice_id);
         self
     }

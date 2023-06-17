@@ -31,7 +31,7 @@ impl Builder<NewInvoicePermissions> for NewInvoicePermissionsBuilder {
 }
 
 impl NewInvoicePermissionsBuilder {
-    pub fn borrower(&mut self, borrower: User) -> &mut Self {
+    pub fn borrower(&mut self, borrower: &User) -> &mut Self {
         self.borrower_id = Some(borrower.user_id);
         self
     }
@@ -41,7 +41,7 @@ impl NewInvoicePermissionsBuilder {
         self
     }
 
-    pub fn invoice(&mut self, invoice: Invoice) -> &mut Self {
+    pub fn invoice(&mut self, invoice: &Invoice) -> &mut Self {
         self.invoice_id = Some(invoice.invoice_id);
         self
     }

@@ -24,7 +24,7 @@ impl<'a> Builder<NewInvoice<'a>> for NewInvoiceBuilder<'a> {
 }
 
 impl<'a> NewInvoiceBuilder<'a> {
-    pub fn owner(&'a mut self, owner: User) -> &'a mut Self {
+    pub fn owner(&'a mut self, owner: &User) -> &'a mut Self {
         self.owner_id = Some(owner.user_id);
         self
     }
