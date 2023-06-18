@@ -3,6 +3,7 @@
 use super::traits::*;
 use super::{NewReportPermissions, Report, ReportPermissions, User};
 use anyhow::Result;
+use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
@@ -64,9 +65,104 @@ impl NewReportPermissionsBuilder {
 
 impl HasBuilder<NewReportPermissionsBuilder, Self> for NewReportPermissions {}
 impl NewReportPermissions {
-    pub fn insert(&self, _conn: &mut PgConnection) -> Result<ReportPermissions> {
-        todo!()
+    pub fn insert(&self, conn: &mut PgConnection) -> Result<ReportPermissions> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::insert_into(dsl::report_permissions)
+            .values(self)
+            .get_result(conn)?;
+
+        Ok(res)
     }
 }
 
 impl HasBuilder<NewReportPermissionsBuilder, NewReportPermissions> for ReportPermissions {}
+impl ReportPermissions {
+    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::delete(dsl::report_permissions.filter(dsl::id.eq(id))).execute(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update(
+        &self,
+        borrower_id: i64,
+        report_id: i64,
+        read_access: bool,
+        write_access: bool,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::update(self)
+            .set((
+                dsl::borrower_id.eq(borrower_id),
+                dsl::report_id.eq(report_id),
+                dsl::read_access.eq(read_access),
+                dsl::write_access.eq(write_access),
+            ))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn replace(&self, new: &NewReportPermissions, conn: &mut PgConnection) -> Result<Self> {
+        self.update(
+            new.borrower_id,
+            new.report_id,
+            new.read_access,
+            new.write_access,
+            conn,
+        )
+    }
+
+    pub fn update_borrower_id(&self, borrower_id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::borrower_id.eq(borrower_id))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_borrower(&self, borrower: &User, conn: &mut PgConnection) -> Result<Self> {
+        self.update_borrower_id(borrower.id, conn)
+    }
+
+    pub fn update_report_id(&self, report_id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::report_id.eq(report_id))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_report(&self, report: &Report, conn: &mut PgConnection) -> Result<Self> {
+        self.update_report_id(report.id, conn)
+    }
+
+    pub fn update_read_access(&self, read_access: bool, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::read_access.eq(read_access))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_write_access(&self, write_access: bool, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_permissions::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::write_access.eq(write_access))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+}

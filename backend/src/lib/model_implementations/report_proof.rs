@@ -3,6 +3,7 @@
 use super::traits::*;
 use super::{NewReportProof, Report, ReportProof};
 use anyhow::Result;
+use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
@@ -42,9 +43,62 @@ impl<'a> NewReportProofBuilder<'a> {
 
 impl<'a> HasBuilder<NewReportProofBuilder<'a>, Self> for NewReportProof<'a> {}
 impl<'a> NewReportProof<'a> {
-    pub fn insert(&self, _conn: &mut PgConnection) -> Result<ReportProof> {
-        todo!()
+    pub fn insert(&self, conn: &mut PgConnection) -> Result<ReportProof> {
+        use crate::schema::report_proof::dsl;
+
+        let res = diesel::insert_into(dsl::report_proof)
+            .values(self)
+            .get_result(conn)?;
+
+        Ok(res)
     }
 }
 
 impl<'a> HasBuilder<NewReportProofBuilder<'a>, NewReportProof<'a>> for ReportProof {}
+impl<'a> ReportProof {
+    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+        use crate::schema::report_proof::dsl;
+
+        let res = diesel::delete(dsl::report_proof.filter(dsl::id.eq(id))).execute(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update(&self, report_id: i64, data: &'a [u8], conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_proof::dsl;
+
+        let res = diesel::update(self)
+            .set((dsl::report_id.eq(report_id), dsl::data.eq(data)))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn replace(&self, new: &NewReportProof, conn: &mut PgConnection) -> Result<Self> {
+        self.update(new.report_id, new.data, conn)
+    }
+
+    pub fn update_report_id(&self, report_id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_proof::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::report_id.eq(report_id))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_report(&self, report: &Report, conn: &mut PgConnection) -> Result<Self> {
+        self.update_report_id(report.id, conn)
+    }
+
+    pub fn update_data(&self, data: &'a [u8], conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_proof::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::data.eq(data))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+}

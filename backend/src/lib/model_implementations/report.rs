@@ -3,6 +3,7 @@
 use super::traits::*;
 use super::{NewReport, Report, User};
 use anyhow::Result;
+use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
@@ -42,9 +43,62 @@ impl<'a> NewReportBuilder<'a> {
 
 impl<'a> HasBuilder<NewReportBuilder<'a>, Self> for NewReport<'a> {}
 impl<'a> NewReport<'a> {
-    pub fn insert(&self, _conn: &mut PgConnection) -> Result<Report> {
-        todo!()
+    pub fn insert(&self, conn: &mut PgConnection) -> Result<Report> {
+        use crate::schema::reports::dsl;
+
+        let res = diesel::insert_into(dsl::reports)
+            .values(self)
+            .get_result(conn)?;
+
+        Ok(res)
     }
 }
 
 impl<'a> HasBuilder<NewReportBuilder<'a>, NewReport<'a>> for Report {}
+impl<'a> Report {
+    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+        use crate::schema::reports::dsl;
+
+        let res = diesel::delete(dsl::reports.filter(dsl::id.eq(id))).execute(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update(&self, owner_id: i64, title: &'a str, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::reports::dsl;
+
+        let res = diesel::update(self)
+            .set((dsl::owner_id.eq(owner_id), dsl::title.eq(title)))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn replace(&self, new: &NewReport, conn: &mut PgConnection) -> Result<Self> {
+        self.update(new.owner_id, new.title, conn)
+    }
+
+    pub fn update_owner_id(&self, owner_id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::reports::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::owner_id.eq(owner_id))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_owner(&self, owner: &User, conn: &mut PgConnection) -> Result<Self> {
+        self.update_owner_id(owner.id, conn)
+    }
+
+    pub fn update_title(&self, title: &'a str, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::reports::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::title.eq(title))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+}

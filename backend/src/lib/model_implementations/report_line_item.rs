@@ -3,6 +3,7 @@
 use super::traits::*;
 use super::{NewReportLineItem, Report, ReportLineItem};
 use anyhow::Result;
+use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
@@ -58,9 +59,106 @@ impl<'a> NewReportLineItemBuilder<'a> {
 
 impl<'a> HasBuilder<NewReportLineItemBuilder<'a>, Self> for NewReportLineItem<'a> {}
 impl<'a> NewReportLineItem<'a> {
-    pub fn insert(&self, _conn: &mut PgConnection) -> Result<ReportLineItem> {
-        todo!()
+    pub fn insert(&self, conn: &mut PgConnection) -> Result<ReportLineItem> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = diesel::insert_into(dsl::report_line_items)
+            .values(self)
+            .get_result(conn)?;
+
+        Ok(res)
     }
 }
 
 impl<'a> HasBuilder<NewReportLineItemBuilder<'a>, NewReportLineItem<'a>> for ReportLineItem {}
+impl<'a> ReportLineItem {
+    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = diesel::delete(dsl::report_line_items.filter(dsl::id.eq(id))).execute(conn)?;
+
+        Ok(res)
+    }
+
+    fn update_using_cents(
+        &self,
+        report_id: i64,
+        name: &'a str,
+        price_usd: diesel::data_types::Cents,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = diesel::update(self)
+            .set((
+                dsl::report_id.eq(report_id),
+                dsl::item_name.eq(name),
+                dsl::item_price_usd.eq(price_usd),
+            ))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update(
+        &self,
+        report_id: i64,
+        name: &'a str,
+        price_usd: i64,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        use diesel::data_types::Cents;
+        let price_usd_cents = Cents(price_usd * 100);
+
+        self.update_using_cents(report_id, name, price_usd_cents, conn)
+    }
+
+    pub fn replace(&self, new: &NewReportLineItem, conn: &mut PgConnection) -> Result<Self> {
+        self.update_using_cents(new.report_id, new.item_name, new.item_price_usd, conn)
+    }
+
+    pub fn update_report_id(&self, report_id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::report_id.eq(report_id))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_report(&self, report: &Report, conn: &mut PgConnection) -> Result<Self> {
+        self.update_report_id(report.id, conn)
+    }
+
+    pub fn update_item_name(&self, name: &'a str, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::item_name.eq(name))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_item_price_usd_cents(
+        &self,
+        price_usd: diesel::data_types::Cents,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::item_price_usd.eq(price_usd))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_item_price_usd(&self, price_usd: i64, conn: &mut PgConnection) -> Result<Self> {
+        use diesel::data_types::Cents;
+        let price_usd_cents = Cents(price_usd * 100);
+
+        self.update_item_price_usd_cents(price_usd_cents, conn)
+    }
+}
