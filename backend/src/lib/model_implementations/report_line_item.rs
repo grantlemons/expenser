@@ -80,6 +80,14 @@ impl<'a> ReportLineItem {
         Ok(res)
     }
 
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_line_items::dsl;
+
+        diesel::delete(dsl::report_line_items).execute(conn)?;
+
+        Ok(())
+    }
+
     fn update_using_cents(
         &self,
         report_id: i64,

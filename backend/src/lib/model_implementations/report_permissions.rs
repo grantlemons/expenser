@@ -86,6 +86,14 @@ impl ReportPermissions {
         Ok(res)
     }
 
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_permissions::dsl;
+
+        diesel::delete(dsl::report_permissions).execute(conn)?;
+
+        Ok(())
+    }
+
     pub fn update(
         &self,
         borrower_id: i64,

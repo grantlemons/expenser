@@ -64,6 +64,14 @@ impl<'a> ReportProof {
         Ok(res)
     }
 
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_proof::dsl;
+
+        diesel::delete(dsl::report_proof).execute(conn)?;
+
+        Ok(())
+    }
+
     pub fn update(&self, report_id: i64, data: &'a [u8], conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_proof::dsl;
 

@@ -81,6 +81,14 @@ impl<'a> User {
         Ok(res)
     }
 
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::users::dsl;
+
+        diesel::delete(dsl::users).execute(conn)?;
+
+        Ok(())
+    }
+
     fn update_hash(
         &self,
         username: &'a str,

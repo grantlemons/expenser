@@ -64,6 +64,14 @@ impl<'a> Report {
         Ok(res)
     }
 
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::reports::dsl;
+
+        diesel::delete(dsl::reports).execute(conn)?;
+
+        Ok(())
+    }
+
     pub fn update(&self, owner_id: i64, title: &'a str, conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::reports::dsl;
 
