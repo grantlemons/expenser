@@ -28,6 +28,7 @@ pub struct Report {
     pub id: i64,
     pub owner_id: i64,
     pub title: String,
+    pub description: Option<String>,
 }
 
 #[derive(Insertable, Debug, PartialEq)]
@@ -35,6 +36,7 @@ pub struct Report {
 pub struct NewReport<'a> {
     pub owner_id: i64,
     pub title: &'a str,
+    pub description: Option<String>,
 }
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
