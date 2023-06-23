@@ -1,0 +1,873 @@
+openapi: 3.0.0
+info:
+  description: "A backend that handles the management of expense reports and user identities"
+  version: 1.0.1
+  title: Expenser Backend
+  contact:
+    email: grantlemons@aol.com
+  license:
+    name: GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
+tags:
+  - name: reports
+  - name: permissions
+  - name: line_items
+  - name: proof
+  - name: users
+
+servers:
+  - url: https://example.com/api
+
+paths:
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create a new user profile
+      description: Creation of a user does not require authentication.
+      operationId: createUser
+      requestBody:
+        $ref: "#/components/requestBodies/CreateUser"
+      responses:
+        "201":
+          description: User created
+        "405":
+          description: Invalid input
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get information about a user
+      description: User information does not include password hash. Profile picture is provided through a url.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getUser
+      responses:
+        "200":
+          description: User data fetched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUserResponse"
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to this user's information
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    put:
+      tags:
+        - users
+      summary: Update user information
+      description: User information does not include profile picture or password. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateUser
+      requestBody:
+        $ref: "#/components/requestBodies/CreateUser"
+      responses:
+        "200":
+          description: User data updated
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to edit this user's information
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - users
+      summary: Delete user account
+      description: Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deleteUser
+      responses:
+        "200":
+          description: User deleted
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to delete this user account
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /users/{id}/pfp:
+    put:
+      tags:
+        - users
+      summary: Update user's profile picture
+      description: Profile picture and sensitive user information is updated through seperate requests for the sake of speed and security. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateUserPfp
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateProfilePicture"
+      responses:
+        "200":
+          description: User profile picture updated
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to edit this user's profile picture
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - users
+      summary: Delete user's profile picture
+      description: Profile picture and sensitive user information is updated through seperate requests for the sake of speed and security. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deleteUserPfp
+      responses:
+        "200":
+          description: User profile picture deleted
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to delete this user's profile picture
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /users/{id}/password:
+    put:
+      tags:
+        - users
+      summary: Update user's password
+      description: Profile picture and sensitive user information is updated through seperate requests for the sake of speed and security. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateUserPassword
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateUserPassword"
+      responses:
+        "200":
+          description: User's password updated
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to edit this user's password
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /users/{id}/reports:
+    get:
+      tags:
+        - users
+        - reports
+      summary: Get all reports owned by the user in question
+      description: Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getUserReports
+      responses:
+        "200":
+          description: User reports successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUserReportsResponse"
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to this user's information
+        "404":
+          description: User id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /reports:
+    post:
+      tags:
+        - reports
+      summary: Create a new report
+      description: Report owner is based on the authenticated user and is not specified in the request.
+      operationId: createReport
+      requestBody:
+        $ref: "#/components/requestBodies/CreateReport"
+      responses:
+        "201":
+          description: New report successfully created
+        "401":
+          description: Client is unauthorized
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+  /reports/{id}:
+    get:
+      tags:
+        - reports
+      summary: Retrieve data on a specific report
+      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getReport
+      responses:
+        "200":
+          description: Successfully retrieved resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetReport"
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    put:
+      tags:
+        - reports
+      summary: Update an existing report
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateReport
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateReport"
+      responses:
+        "200":
+          description: Successfully updated resource
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - reports
+      summary: Delete an existing report
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deleteReport
+      responses:
+        "200":
+          description: Successfully removed resource
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /reports/{id}/items:
+    post:
+      tags:
+        - reports
+        - line_items
+      summary: Create a new line item
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: createLineItem
+      requestBody:
+        $ref: "#/components/requestBodies/CreateLineItem"
+      responses:
+        "201":
+          description: New line item successfully created
+        "401":
+          description: Client is unauthorized
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+    get:
+      tags:
+        - reports
+        - line_items
+      summary: Retrieve all line items of a specific report
+      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getLineItems
+      responses:
+        "200":
+          description: Successfully retrieved resources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetLineItemsResponse"
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - reports
+        - line_items
+      summary: Clear all line items of a specific report
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: clearLineItems
+      responses:
+        "200":
+          description: Successfully removed resources
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /reports/{id}/items/{item_id}:
+    put:
+      tags:
+        - reports
+        - line_items
+      summary: Create a new line item
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+        - in: path
+          name: item_id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateLineItem
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateLineItem"
+      responses:
+        "201":
+          description: New line item successfully created
+        "401":
+          description: Client is unauthorized
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+    get:
+      tags:
+        - reports
+        - line_items
+      summary: Get the information of a specific line item
+      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+        - in: path
+          name: item_id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getLineItem
+      responses:
+        "200":
+          description: Successfully retrieved resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetLineItemResponse"
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - reports
+        - line_items
+      summary: Delete a specific line item
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+        - in: path
+          name: item_id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deleteLineItem
+      responses:
+        "200":
+          description: Successfully removed resource
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /reports/{id}/permissions:
+    post:
+      tags:
+        - reports
+        - permissions
+      summary: Create a new permission relationship between a user and a report
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: createPermissions
+      requestBody:
+        $ref: "#/components/requestBodies/CreatePermissions"
+      responses:
+        "201":
+          description: New permission relationship successfully created
+        "401":
+          description: Client is unauthorized
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+    get:
+      tags:
+        - reports
+        - permissions
+      summary: Retrieve all permission relationships of a specific report
+      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getAllPermissions
+      responses:
+        "200":
+          description: Successfully retrieved resources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetAllPermissionsResponse"
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - reports
+        - permissions
+      summary: Clear all permission relationships of a specific report
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: clearPermissions
+      responses:
+        "200":
+          description: Successfully removed resources
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+  /reports/{id}/permissions/{access_id}:
+    put:
+      tags:
+        - reports
+        - permissions
+      summary: Create a new permission relationship
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+        - in: path
+          name: access_id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updatePermissions
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePermissions"
+      responses:
+        "201":
+          description: New permission relationship successfully created
+        "401":
+          description: Client is unauthorized
+        "422":
+          description: The request was unable to be followed due to semantic errors
+        "504":
+          description: Database error or unable to connect to database
+    get:
+      tags:
+        - reports
+        - permissions
+      summary: Get the information of a specific permission relationship
+      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+        - in: path
+          name: access_id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getPermissions
+      responses:
+        "200":
+          description: Successfully retrieved resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPermissionsResponse"
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+    delete:
+      tags:
+        - reports
+        - permissions
+      summary: Delete a specific permissions relationship
+      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+        - in: path
+          name: access_id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deletePermission
+      responses:
+        "200":
+          description: Successfully removed resource
+        "401":
+          description: Client is unauthenticated
+        "403":
+          description: Client does not have access
+        "404":
+          description: Report id not found or invalid
+        "504":
+          description: Database error or unable to connect to database
+
+components:
+  requestBodies:
+    CreateUser:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateUser"
+      description: List of user object
+      required: true
+    CreateReport:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateReport"
+    CreateLineItem:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateLineItem"
+    CreatePermissions:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreatePermissions"
+    CreateProof:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateProof"
+    UpdateReport:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateReport"
+    UpdateLineItem:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateLineItem"
+    UpdatePermissions:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreatePermissions"
+    UpdateProof:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateProof"
+    UpdateProfilePicture:
+      content:
+        image/*:
+          schema:
+            $ref: "#/components/schemas/Image"
+      description: New user profile picture
+      required: true
+    UpdateUserPassword:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UpdateUserPassword"
+  schemas:
+    Id:
+      type: integer
+      format: int64
+    CreateUser:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+    CreateReport:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+    CreateLineItem:
+      type: object
+      properties:
+        invoice_id:
+          type: integer
+          format: int64
+        item_name:
+          type: string
+        item_price_usd:
+          type: integer
+          format: float64
+    CreatePermissions:
+      type: object
+      properties:
+        borrower_id:
+          type: integer
+          format: int64
+        invoice_id:
+          type: integer
+          format: int64
+        read_access:
+          type: boolean
+        write_access:
+          type: boolean
+    CreateProof:
+      type: object
+      properties:
+        invoice_id:
+          type: integer
+          format: int64
+        data:
+          $ref: "#/components/schemas/Image"
+    GetUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        profile_picture_url:
+          type: string
+    GetUserReportsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/GetReport"
+    GetLineItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        invoice_id:
+          type: integer
+          format: int64
+        item_name:
+          type: string
+        item_price_usd:
+          type: integer
+          format: float64
+    GetLineItemsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/GetLineItemResponse"
+    GetPermissionsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        borrower_id:
+          type: integer
+          format: int64
+        invoice_id:
+          type: integer
+          format: int64
+        read_access:
+          type: boolean
+        write_access:
+          type: boolean
+    GetAllPermissionsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/GetPermissionsResponse"
+    GetReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        owner_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+    UpdateUserPassword:
+      type: object
+      properties:
+        password:
+          type: string
+    Image:
+      type: string
+      format: binary
+
+      # tags:
+      #   - reports
+      # summary:
+      # description: .
+      # parameters:
+      #   - in: path
+      #     name: id
+      #     schema:
+      #       $ref: "#/components/schemas/Id"
+      #     required: true
+      # operationId:
+      # responses:
+      #   "200":
+      #     description: Successfully retrieved resource
+      #     content:
+      #       application/json:
+      #         schema:
+      #           $ref: "#/components/schemas/Response"
+      #   "201":
+      #     description: Resource successfully created
+      #   "401":
+      #     description: Client is unauthenticated
+      #   "403":
+      #     description: Client does not have access
+      #   "404":
+      #     description: Report id not found or invalid
+      #   "422":
+      #     description: The request was unable to be followed due to semantic errors
+      #   "504":
+      #     description: Database error or unable to connect to database
