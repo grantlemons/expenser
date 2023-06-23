@@ -1,0 +1,271 @@
+openapi: 3.0.0
+info:
+  description: "A backend that handles the management of expense reports and user identities"
+  version: 1.0.1
+  title: Envoicer Backend
+  contact:
+    email: grantlemons@aol.com
+  license:
+    name: GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
+tags:
+  - name: reports
+  - name: users
+
+servers:
+  - url: https://example.com/api
+
+paths:
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create a new user profile
+      description: Creation of a user does not require authentication.
+      operationId: createUser
+      requestBody:
+        $ref: "#/components/requestBodies/CreateUser"
+      responses:
+        "201":
+          description: User created
+        "405":
+          description: Invalid input
+        "422":
+          description: The request was unable to be followed due to semantic errors.
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get information about a user
+      description: User information does not include password hash. Profile picture is provided through a url.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getUser
+      responses:
+        "200":
+          description: User data fetched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUserResponse"
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to this user's information
+        "404":
+          description: User id not found or invalid
+    put:
+      tags:
+        - users
+      summary: Update user information
+      description: User information does not include profile picture or password. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateUser
+      requestBody:
+        $ref: "#/components/requestBodies/CreateUser"
+      responses:
+        "200":
+          description: User data updated
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to edit this user's information
+        "404":
+          description: User id not found or invalid
+    delete:
+      tags:
+        - users
+      summary: Delete user account
+      description: Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deleteUser
+      responses:
+        "200":
+          description: User deleted
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to delete this user account
+        "404":
+          description: User id not found or invalid
+  /users/{id}/pfp:
+    put:
+      tags:
+        - users
+      summary: Update user's profile picture
+      description: Profile picture and sensitive user information is updated through seperate requests for the sake of speed and security. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateUserPfp
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateProfilePicture"
+      responses:
+        "200":
+          description: User profile picture updated
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to edit this user's profile picture
+        "404":
+          description: User id not found or invalid
+    delete:
+      tags:
+        - users
+      summary: Delete user's profile picture
+      description: Profile picture and sensitive user information is updated through seperate requests for the sake of speed and security. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: deleteUserPfp
+      responses:
+        "200":
+          description: User profile picture deleted
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to delete this user's profile picture
+        "404":
+          description: User id not found or invalid
+  /users/{id}/password:
+    put:
+      tags:
+        - users
+      summary: Update user's password
+      description: Profile picture and sensitive user information is updated through seperate requests for the sake of speed and security. Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: updateUserPassword
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateUserPassword"
+      responses:
+        "200":
+          description: User's password updated
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to edit this user's password
+        "404":
+          description: User id not found or invalid
+  /users/{id}/reports:
+    get:
+      tags:
+        - users
+        - reports
+      summary: Get all reports owned by the user in question
+      description: Requires administrator level access or to be done by the user in question.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      operationId: getUserReports
+      responses:
+        "200":
+          description: User reports successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUserReportsResponse"
+        "401":
+          description: Client is unauthorized
+        "403":
+          description: Client does not have access to this user's information
+        "404":
+          description: User id not found or invalid
+components:
+  requestBodies:
+    CreateUser:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateUser"
+      description: List of user object
+      required: true
+    UpdateProfilePicture:
+      content:
+        image/*:
+          schema:
+            $ref: "#/components/schemas/Image"
+      description: New user profile picture
+      required: true
+    UpdateUserPassword:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UpdateUserPassword"
+  schemas:
+    Id:
+      type: integer
+      format: int64
+    CreateUser:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+    GetUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        profile_picture_url:
+          type: string
+    GetUserReportsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/GetReport"
+    GetReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        owner_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+    UpdateUserPassword:
+      type: object
+      properties:
+        password:
+          type: string
+    Image:
+      type: string
+      format: binary
