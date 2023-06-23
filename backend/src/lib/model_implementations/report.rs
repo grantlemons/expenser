@@ -10,6 +10,7 @@ use diesel::PgConnection;
 pub struct NewReportBuilder<'a> {
     owner_id: Option<i64>,
     title: Option<&'a str>,
+    description: Option<&'a str>,
 }
 
 impl<'a> Builder<NewReport<'a>> for NewReportBuilder<'a> {
@@ -17,7 +18,11 @@ impl<'a> Builder<NewReport<'a>> for NewReportBuilder<'a> {
 
     fn build(&self) -> Option<Self::Output> {
         if let (Some(owner_id), Some(title)) = (self.owner_id, self.title) {
-            Some(Self::Output { owner_id, title })
+            Some(Self::Output {
+                owner_id,
+                title,
+                description: self.description,
+            })
         } else {
             None
         }
@@ -72,18 +77,28 @@ impl<'a> Report {
         Ok(())
     }
 
-    pub fn update(&self, owner_id: i64, title: &'a str, conn: &mut PgConnection) -> Result<Self> {
+    pub fn update(
+        &self,
+        owner_id: i64,
+        title: &'a str,
+        description: Option<&'a str>,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
         use crate::schema::reports::dsl;
 
         let res = diesel::update(self)
-            .set((dsl::owner_id.eq(owner_id), dsl::title.eq(title)))
+            .set((
+                dsl::owner_id.eq(owner_id),
+                dsl::title.eq(title),
+                dsl::description.eq(description),
+            ))
             .get_result(conn)?;
 
         Ok(res)
     }
 
     pub fn replace(&self, new: &NewReport, conn: &mut PgConnection) -> Result<Self> {
-        self.update(new.owner_id, new.title, conn)
+        self.update(new.owner_id, new.title, new.description, conn)
     }
 
     pub fn update_owner_id(&self, owner_id: i64, conn: &mut PgConnection) -> Result<Self> {
@@ -105,6 +120,20 @@ impl<'a> Report {
 
         let res = diesel::update(self)
             .set(dsl::title.eq(title))
+            .get_result(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn update_description(
+        &self,
+        description: &'a str,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        use crate::schema::reports::dsl;
+
+        let res = diesel::update(self)
+            .set(dsl::description.eq(Some(description)))
             .get_result(conn)?;
 
         Ok(res)
