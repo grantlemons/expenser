@@ -72,6 +72,25 @@ impl<'a> NewReportLineItem<'a> {
 
 impl<'a> HasBuilder<NewReportLineItemBuilder<'a>, NewReportLineItem<'a>> for ReportLineItem {}
 impl<'a> ReportLineItem {
+    pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = dsl::report_line_items.filter(dsl::id.eq(id)).first(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn get_by_report(report_id: i64, conn: &mut PgConnection) -> Result<Vec<Self>> {
+        use crate::schema::report_line_items::dsl;
+
+        let res = dsl::report_line_items
+            .filter(dsl::report_id.eq(report_id))
+            .select(Self::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
     pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
         use crate::schema::report_line_items::dsl;
 

@@ -61,6 +61,25 @@ impl<'a> NewReport<'a> {
 
 impl<'a> HasBuilder<NewReportBuilder<'a>, NewReport<'a>> for Report {}
 impl<'a> Report {
+    pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::reports::dsl;
+
+        let res = dsl::reports.filter(dsl::id.eq(id)).first(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn get_by_owner(owner_id: i64, conn: &mut PgConnection) -> Result<Vec<Self>> {
+        use crate::schema::reports::dsl;
+
+        let res = dsl::reports
+            .filter(dsl::owner_id.eq(owner_id))
+            .select(Self::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
     pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
         use crate::schema::reports::dsl;
 

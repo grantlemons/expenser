@@ -78,6 +78,36 @@ impl NewReportAccess {
 
 impl HasBuilder<NewReportAccessBuilder, NewReportAccess> for ReportAccess {}
 impl ReportAccess {
+    pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_access::dsl;
+
+        let res = dsl::report_access.filter(dsl::id.eq(id)).first(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn get_by_report(report_id: i64, conn: &mut PgConnection) -> Result<Vec<Self>> {
+        use crate::schema::report_access::dsl;
+
+        let res = dsl::report_access
+            .filter(dsl::report_id.eq(report_id))
+            .select(Self::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn get_by_borrower(borrower_id: i64, conn: &mut PgConnection) -> Result<Vec<Self>> {
+        use crate::schema::report_access::dsl;
+
+        let res = dsl::report_access
+            .filter(dsl::borrower_id.eq(borrower_id))
+            .select(Self::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
     pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
         use crate::schema::report_access::dsl;
 

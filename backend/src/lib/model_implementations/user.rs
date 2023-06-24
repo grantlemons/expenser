@@ -73,6 +73,14 @@ impl<'a> NewUser<'a> {
 
 impl<'a> HasBuilder<NewUserBuilder<'a>, NewUser<'a>> for User {}
 impl<'a> User {
+    pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::users::dsl;
+
+        let res = dsl::users.filter(dsl::id.eq(id)).first(conn)?;
+
+        Ok(res)
+    }
+
     pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
         use crate::schema::users::dsl;
 

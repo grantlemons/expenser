@@ -56,6 +56,25 @@ impl<'a> NewReportProof<'a> {
 
 impl<'a> HasBuilder<NewReportProofBuilder<'a>, NewReportProof<'a>> for ReportProof {}
 impl<'a> ReportProof {
+    pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_proof::dsl;
+
+        let res = dsl::report_proof.filter(dsl::id.eq(id)).first(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn get_by_report(report_id: i64, conn: &mut PgConnection) -> Result<Vec<Self>> {
+        use crate::schema::report_proof::dsl;
+
+        let res = dsl::report_proof
+            .filter(dsl::report_id.eq(report_id))
+            .select(Self::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
     pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
         use crate::schema::report_proof::dsl;
 
