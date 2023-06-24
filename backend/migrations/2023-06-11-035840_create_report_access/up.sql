@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS report_permissions (
+CREATE TABLE IF NOT EXISTS report_access (
     id bigint GENERATED ALWAYS AS IDENTITY,
     borrower_id bigint NOT NULL,
     report_id bigint NOT NULL,

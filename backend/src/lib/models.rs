@@ -61,8 +61,8 @@ pub struct NewReportProof<'a> {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(User, foreign_key = borrower_id))]
 #[diesel(belongs_to(Report))]
-#[diesel(table_name = report_permissions)]
-pub struct ReportPermissions {
+#[diesel(table_name = report_access)]
+pub struct ReportAccess {
     pub id: i64,
     pub borrower_id: i64,
     pub report_id: i64,
@@ -73,8 +73,8 @@ pub struct ReportPermissions {
 #[derive(Insertable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(Report))]
-#[diesel(table_name = report_permissions)]
-pub struct NewReportPermissions {
+#[diesel(table_name = report_access)]
+pub struct NewReportAccess {
     pub borrower_id: i64,
     pub report_id: i64,
     pub read_access: bool,

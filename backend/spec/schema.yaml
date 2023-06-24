@@ -10,7 +10,7 @@ info:
     url: https://www.gnu.org/licenses/gpl-3.0.en.html
 tags:
   - name: reports
-  - name: permissions
+  - name: access
   - name: line_items
   - name: proof
   - name: users
@@ -240,7 +240,7 @@ paths:
       tags:
         - reports
       summary: Retrieve data on a specific report
-      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have view access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -267,7 +267,7 @@ paths:
       tags:
         - reports
       summary: Update an existing report
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -294,7 +294,7 @@ paths:
       tags:
         - reports
       summary: Delete an existing report
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -319,7 +319,7 @@ paths:
         - reports
         - line_items
       summary: Create a new line item
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -343,7 +343,7 @@ paths:
         - reports
         - line_items
       summary: Retrieve all line items of a specific report
-      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have view access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -371,7 +371,7 @@ paths:
         - reports
         - line_items
       summary: Clear all line items of a specific report
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -396,7 +396,7 @@ paths:
         - reports
         - line_items
       summary: Create a new line item
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -425,7 +425,7 @@ paths:
         - reports
         - line_items
       summary: Get the information of a specific line item
-      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have view access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -458,7 +458,7 @@ paths:
         - reports
         - line_items
       summary: Delete a specific line item
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -482,25 +482,25 @@ paths:
           description: Report id not found or invalid
         "504":
           description: Database error or unable to connect to database
-  /reports/{id}/permissions:
+  /reports/{id}/access:
     post:
       tags:
         - reports
-        - permissions
-      summary: Create a new permission relationship between a user and a report
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+        - access
+      summary: Create a new access relationship between a user and a report
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
           schema:
             $ref: "#/components/schemas/Id"
           required: true
-      operationId: createPermissions
+      operationId: createAccess
       requestBody:
-        $ref: "#/components/requestBodies/CreatePermissions"
+        $ref: "#/components/requestBodies/CreateAccess"
       responses:
         "201":
-          description: New permission relationship successfully created
+          description: New access relationship successfully created
         "401":
           description: Client is unauthorized
         "422":
@@ -510,23 +510,23 @@ paths:
     get:
       tags:
         - reports
-        - permissions
-      summary: Retrieve all permission relationships of a specific report
-      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+        - access
+      summary: Retrieve all access relationships of a specific report
+      description: Client must have view access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
           schema:
             $ref: "#/components/schemas/Id"
           required: true
-      operationId: getAllPermissions
+      operationId: getAllAccess
       responses:
         "200":
           description: Successfully retrieved resources
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetAllPermissionsResponse"
+                $ref: "#/components/schemas/GetAllAccessResponse"
         "401":
           description: Client is unauthenticated
         "403":
@@ -538,16 +538,16 @@ paths:
     delete:
       tags:
         - reports
-        - permissions
-      summary: Clear all permission relationships of a specific report
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+        - access
+      summary: Clear all access relationships of a specific report
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
           schema:
             $ref: "#/components/schemas/Id"
           required: true
-      operationId: clearPermissions
+      operationId: clearAccess
       responses:
         "200":
           description: Successfully removed resources
@@ -559,13 +559,13 @@ paths:
           description: Report id not found or invalid
         "504":
           description: Database error or unable to connect to database
-  /reports/{id}/permissions/{access_id}:
+  /reports/{id}/access/{access_id}:
     put:
       tags:
         - reports
-        - permissions
-      summary: Create a new permission relationship
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+        - access
+      summary: Create a new access relationship
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -577,12 +577,12 @@ paths:
           schema:
             $ref: "#/components/schemas/Id"
           required: true
-      operationId: updatePermissions
+      operationId: updateAccess
       requestBody:
-        $ref: "#/components/requestBodies/UpdatePermissions"
+        $ref: "#/components/requestBodies/UpdateAccess"
       responses:
         "201":
-          description: New permission relationship successfully created
+          description: New access relationship successfully created
         "401":
           description: Client is unauthorized
         "422":
@@ -592,9 +592,9 @@ paths:
     get:
       tags:
         - reports
-        - permissions
-      summary: Get the information of a specific permission relationship
-      description: Client must have view access to the report, which can come from ownership or from a permissions relationship.
+        - access
+      summary: Get the information of a specific access relationship
+      description: Client must have view access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -606,14 +606,14 @@ paths:
           schema:
             $ref: "#/components/schemas/Id"
           required: true
-      operationId: getPermissions
+      operationId: getAccess
       responses:
         "200":
           description: Successfully retrieved resource
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetPermissionsResponse"
+                $ref: "#/components/schemas/GetAccessResponse"
         "401":
           description: Client is unauthenticated
         "403":
@@ -625,9 +625,9 @@ paths:
     delete:
       tags:
         - reports
-        - permissions
-      summary: Delete a specific permissions relationship
-      description: Client must have write access to the report, which can come from ownership or from a permissions relationship.
+        - access
+      summary: Delete a specific access relationship
+      description: Client must have write access to the report, which can come from ownership or from an access relationship.
       parameters:
         - in: path
           name: id
@@ -639,7 +639,7 @@ paths:
           schema:
             $ref: "#/components/schemas/Id"
           required: true
-      operationId: deletePermission
+      operationId: deleteaccess
       responses:
         "200":
           description: Successfully removed resource
@@ -671,11 +671,11 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CreateLineItem"
-    CreatePermissions:
+    CreateAccess:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/CreatePermissions"
+            $ref: "#/components/schemas/CreateAccess"
     CreateProof:
       content:
         application/json:
@@ -691,11 +691,11 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CreateLineItem"
-    UpdatePermissions:
+    UpdateAccess:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/CreatePermissions"
+            $ref: "#/components/schemas/CreateAccess"
     UpdateProof:
       content:
         application/json:
@@ -744,7 +744,7 @@ components:
         item_price_usd:
           type: integer
           format: float64
-    CreatePermissions:
+    CreateAccess:
       type: object
       properties:
         borrower_id:
@@ -799,7 +799,7 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/GetLineItemResponse"
-    GetPermissionsResponse:
+    GetAccessResponse:
       type: object
       properties:
         id:
@@ -815,10 +815,10 @@ components:
           type: boolean
         write_access:
           type: boolean
-    GetAllPermissionsResponse:
+    GetAllAccessResponse:
       type: array
       items:
-        $ref: "#/components/schemas/GetPermissionsResponse"
+        $ref: "#/components/schemas/GetAccessResponse"
     GetReport:
       type: object
       properties:

@@ -22,8 +22,8 @@ mod model_implementations {
     }
 
     pub mod report;
+    pub mod report_access;
     pub mod report_line_item;
-    pub mod report_permissions;
     pub mod report_proof;
     pub mod user;
 }
