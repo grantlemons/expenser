@@ -1,6 +1,6 @@
 use leptos::*;
 
 #[component]
-pub fn SignIn(cx: Scope) -> impl IntoView {
+pub fn SignInPage(cx: Scope) -> impl IntoView {
     todo!()
 }
