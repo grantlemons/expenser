@@ -7,18 +7,18 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
-pub struct NewReportLineItemBuilder<'a> {
+pub struct NewReportLineItemBuilder {
     report_id: Option<i64>,
-    item_name: Option<&'a str>,
+    item_name: Option<String>,
     item_price_usd: Option<diesel::data_types::Cents>,
 }
 
-impl<'a> Builder<NewReportLineItem<'a>> for NewReportLineItemBuilder<'a> {
-    type Output = NewReportLineItem<'a>;
+impl Builder<NewReportLineItem> for NewReportLineItemBuilder {
+    type Output = NewReportLineItem;
 
     fn build(&self) -> Option<Self::Output> {
         if let (Some(report_id), Some(item_name), Some(item_price_usd)) =
-            (self.report_id, self.item_name, self.item_price_usd)
+            (self.report_id, self.item_name.clone(), self.item_price_usd)
         {
             Some(Self::Output {
                 report_id,
@@ -31,7 +31,7 @@ impl<'a> Builder<NewReportLineItem<'a>> for NewReportLineItemBuilder<'a> {
     }
 }
 
-impl<'a> NewReportLineItemBuilder<'a> {
+impl NewReportLineItemBuilder {
     pub fn report(&mut self, report: &Report) -> &mut Self {
         self.report_id = Some(report.id);
         self
@@ -42,23 +42,23 @@ impl<'a> NewReportLineItemBuilder<'a> {
         self
     }
 
-    pub fn item_name(&mut self, item_name: &'a str) -> &mut Self {
+    pub fn item_name(&mut self, item_name: String) -> &mut Self {
         self.item_name = Some(item_name);
         self
     }
 
-    pub fn item_price_usd(&mut self, price_usd: i64) -> &mut Self {
+    pub fn item_price_usd(&mut self, price_usd: f64) -> &mut Self {
         use diesel::data_types::Cents;
 
-        let price_usd_cents = Cents(price_usd * 100);
+        let price_usd_cents = Cents((price_usd * 100.0).trunc() as i64);
 
         self.item_price_usd = Some(price_usd_cents);
         self
     }
 }
 
-impl<'a> HasBuilder<NewReportLineItemBuilder<'a>, Self> for NewReportLineItem<'a> {}
-impl<'a> NewReportLineItem<'a> {
+impl HasBuilder<NewReportLineItemBuilder, Self> for NewReportLineItem {}
+impl NewReportLineItem {
     pub fn insert(&self, conn: &mut PgConnection) -> Result<ReportLineItem> {
         use crate::schema::report_line_items::dsl;
 
@@ -70,8 +70,25 @@ impl<'a> NewReportLineItem<'a> {
     }
 }
 
-impl<'a> HasBuilder<NewReportLineItemBuilder<'a>, NewReportLineItem<'a>> for ReportLineItem {}
-impl<'a> ReportLineItem {
+impl HasBuilder<NewReportLineItemBuilder, NewReportLineItem> for ReportLineItem {}
+impl ReportLineItem {
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_line_items::dsl;
+
+        diesel::delete(dsl::report_line_items).execute(conn)?;
+
+        Ok(())
+    }
+
+    pub fn clear_by_report(report_id: i64, conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_line_items::dsl;
+
+        diesel::delete(dsl::report_line_items.filter(dsl::report_id.eq(report_id)))
+            .execute(conn)?;
+
+        Ok(())
+    }
+
     pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_line_items::dsl;
 
@@ -91,101 +108,78 @@ impl<'a> ReportLineItem {
         Ok(res)
     }
 
-    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+    pub fn get_by_path(path_ids: (i64, i64), conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_line_items::dsl;
 
-        let res = diesel::delete(dsl::report_line_items.filter(dsl::id.eq(id))).execute(conn)?;
+        let res = dsl::report_line_items
+            .filter(dsl::report_id.eq(path_ids.0))
+            .filter(dsl::id.eq(path_ids.1))
+            .first(conn)?;
 
         Ok(res)
     }
 
-    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+    pub fn delete(path_ids: (i64, i64), conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_line_items::dsl;
 
-        diesel::delete(dsl::report_line_items).execute(conn)?;
+        let res = diesel::delete(
+            dsl::report_line_items
+                .filter(dsl::report_id.eq(path_ids.0))
+                .filter(dsl::id.eq(path_ids.1)),
+        )
+        .get_result(conn)?;
 
-        Ok(())
+        Ok(res)
     }
 
     fn update_using_cents(
-        &self,
+        path_ids: (i64, i64),
         report_id: i64,
-        name: &'a str,
+        name: &str,
         price_usd: diesel::data_types::Cents,
         conn: &mut PgConnection,
     ) -> Result<Self> {
         use crate::schema::report_line_items::dsl;
 
-        let res = diesel::update(self)
-            .set((
-                dsl::report_id.eq(report_id),
-                dsl::item_name.eq(name),
-                dsl::item_price_usd.eq(price_usd),
-            ))
-            .get_result(conn)?;
+        let res = diesel::update(
+            dsl::report_line_items
+                .filter(dsl::report_id.eq(path_ids.0))
+                .filter(dsl::id.eq(path_ids.1)),
+        )
+        .set((
+            dsl::report_id.eq(report_id),
+            dsl::item_name.eq(name),
+            dsl::item_price_usd.eq(price_usd),
+        ))
+        .get_result(conn)?;
 
         Ok(res)
     }
 
     pub fn update(
-        &self,
+        path_ids: (i64, i64),
         report_id: i64,
-        name: &'a str,
-        price_usd: i64,
+        name: &str,
+        price_usd: f64,
         conn: &mut PgConnection,
     ) -> Result<Self> {
         use diesel::data_types::Cents;
-        let price_usd_cents = Cents(price_usd * 100);
+        let price_usd_cents = Cents((price_usd * 100.0).trunc() as i64);
 
-        self.update_using_cents(report_id, name, price_usd_cents, conn)
+        Self::update_using_cents(path_ids, report_id, name, price_usd_cents, conn)
     }
 
-    pub fn replace(&self, new: &NewReportLineItem, conn: &mut PgConnection) -> Result<Self> {
-        self.update_using_cents(new.report_id, new.item_name, new.item_price_usd, conn)
-    }
-
-    pub fn update_report_id(&self, report_id: i64, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_line_items::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::report_id.eq(report_id))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_report(&self, report: &Report, conn: &mut PgConnection) -> Result<Self> {
-        self.update_report_id(report.id, conn)
-    }
-
-    pub fn update_item_name(&self, name: &'a str, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_line_items::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::item_name.eq(name))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_item_price_usd_cents(
-        &self,
-        price_usd: diesel::data_types::Cents,
+    pub fn replace(
+        path_ids: (i64, i64),
+        new: &NewReportLineItem,
         conn: &mut PgConnection,
     ) -> Result<Self> {
-        use crate::schema::report_line_items::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::item_price_usd.eq(price_usd))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_item_price_usd(&self, price_usd: i64, conn: &mut PgConnection) -> Result<Self> {
-        use diesel::data_types::Cents;
-        let price_usd_cents = Cents(price_usd * 100);
-
-        self.update_item_price_usd_cents(price_usd_cents, conn)
+        Self::update_using_cents(
+            path_ids,
+            new.report_id,
+            &new.item_name,
+            new.item_price_usd,
+            conn,
+        )
     }
 }

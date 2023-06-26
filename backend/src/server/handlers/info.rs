@@ -1,16 +1,5 @@
+use super::types::CrateInfo;
 use axum::Json;
-use serde::Serialize;
-
-#[derive(Debug, Serialize)]
-/// Information on version and other fields set in the cargo manifest
-pub(crate) struct CrateInfo {
-    name: &'static str,
-    authors: Vec<&'static str>,
-    version: &'static str,
-    description: &'static str,
-    license: &'static str,
-    repository: &'static str,
-}
 
 /// Healthcheck handler
 ///

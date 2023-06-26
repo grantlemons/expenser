@@ -78,6 +78,33 @@ impl NewReportAccess {
 
 impl HasBuilder<NewReportAccessBuilder, NewReportAccess> for ReportAccess {}
 impl ReportAccess {
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_access::dsl;
+
+        diesel::delete(dsl::report_access).execute(conn)?;
+
+        Ok(())
+    }
+
+    pub fn clear_by_report(report_id: i64, conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_access::dsl;
+
+        diesel::delete(dsl::report_access.filter(dsl::report_id.eq(report_id))).execute(conn)?;
+
+        Ok(())
+    }
+
+    pub fn get_by_path(path_ids: (i64, i64), conn: &mut PgConnection) -> Result<Self> {
+        use crate::schema::report_access::dsl;
+
+        let res = dsl::report_access
+            .filter(dsl::report_id.eq(path_ids.0))
+            .filter(dsl::id.eq(path_ids.1))
+            .first(conn)?;
+
+        Ok(res)
+    }
+
     pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_access::dsl;
 
@@ -108,24 +135,69 @@ impl ReportAccess {
         Ok(res)
     }
 
-    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+    pub fn get_by_view_access(borrower_id: i64, conn: &mut PgConnection) -> Result<Vec<Self>> {
         use crate::schema::report_access::dsl;
 
-        let res = diesel::delete(dsl::report_access.filter(dsl::id.eq(id))).execute(conn)?;
+        let res = dsl::report_access
+            .filter(dsl::borrower_id.eq(borrower_id))
+            .filter(dsl::read_access.eq(true))
+            .select(Self::as_select())
+            .load(conn)?;
 
         Ok(res)
     }
 
-    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+    pub fn get_report_by_borrower(
+        borrower_id: i64,
+        conn: &mut PgConnection,
+    ) -> Result<Vec<Report>> {
+        use crate::schema::reports::dsl;
+
+        let report_ids = Self::get_by_borrower(borrower_id, conn)?
+            .into_iter()
+            .map(|a| a.report_id);
+
+        let res = dsl::reports
+            .filter(dsl::id.eq_any(report_ids))
+            .select(Report::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn get_report_by_read_access(
+        borrower_id: i64,
+        conn: &mut PgConnection,
+    ) -> Result<Vec<Report>> {
+        use crate::schema::reports::dsl;
+
+        let report_ids = Self::get_by_view_access(borrower_id, conn)?
+            .into_iter()
+            .map(|a| a.report_id);
+
+        let res = dsl::reports
+            .filter(dsl::id.eq_any(report_ids))
+            .select(Report::as_select())
+            .load(conn)?;
+
+        Ok(res)
+    }
+
+    pub fn delete(path_ids: (i64, i64), conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_access::dsl;
 
-        diesel::delete(dsl::report_access).execute(conn)?;
+        let res = diesel::delete(
+            dsl::report_access
+                .filter(dsl::report_id.eq(path_ids.0))
+                .filter(dsl::id.eq(path_ids.1)),
+        )
+        .get_result(conn)?;
 
-        Ok(())
+        Ok(res)
     }
 
     pub fn update(
-        &self,
+        path_ids: (i64, i64),
         borrower_id: i64,
         report_id: i64,
         read_access: bool,
@@ -134,73 +206,34 @@ impl ReportAccess {
     ) -> Result<Self> {
         use crate::schema::report_access::dsl;
 
-        let res = diesel::update(self)
-            .set((
-                dsl::borrower_id.eq(borrower_id),
-                dsl::report_id.eq(report_id),
-                dsl::read_access.eq(read_access),
-                dsl::write_access.eq(write_access),
-            ))
-            .get_result(conn)?;
+        let res = diesel::update(
+            dsl::report_access
+                .filter(dsl::report_id.eq(path_ids.0))
+                .filter(dsl::id.eq(path_ids.1)),
+        )
+        .set((
+            dsl::borrower_id.eq(borrower_id),
+            dsl::report_id.eq(report_id),
+            dsl::read_access.eq(read_access),
+            dsl::write_access.eq(write_access),
+        ))
+        .get_result(conn)?;
 
         Ok(res)
     }
 
-    pub fn replace(&self, new: &NewReportAccess, conn: &mut PgConnection) -> Result<Self> {
-        self.update(
+    pub fn replace(
+        path_ids: (i64, i64),
+        new: &NewReportAccess,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        Self::update(
+            path_ids,
             new.borrower_id,
             new.report_id,
             new.read_access,
             new.write_access,
             conn,
         )
-    }
-
-    pub fn update_borrower_id(&self, borrower_id: i64, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_access::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::borrower_id.eq(borrower_id))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_borrower(&self, borrower: &User, conn: &mut PgConnection) -> Result<Self> {
-        self.update_borrower_id(borrower.id, conn)
-    }
-
-    pub fn update_report_id(&self, report_id: i64, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_access::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::report_id.eq(report_id))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_report(&self, report: &Report, conn: &mut PgConnection) -> Result<Self> {
-        self.update_report_id(report.id, conn)
-    }
-
-    pub fn update_read_access(&self, read_access: bool, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_access::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::read_access.eq(read_access))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_write_access(&self, write_access: bool, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_access::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::write_access.eq(write_access))
-            .get_result(conn)?;
-
-        Ok(res)
     }
 }

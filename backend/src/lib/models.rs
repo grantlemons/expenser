@@ -1,5 +1,6 @@
 use crate::schema::*;
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable, Identifiable, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -12,16 +13,16 @@ pub struct User {
     pub password_hash: String,
 }
 
-#[derive(Insertable, Debug, PartialEq)]
+#[derive(Deserialize, Insertable, Debug, PartialEq)]
 #[diesel(table_name = users)]
-pub struct NewUser<'a> {
-    pub username: &'a str,
-    pub email: &'a str,
-    pub profile_picture: Option<&'a [u8]>,
-    pub password_hash: &'a str,
+pub struct NewUser {
+    pub username: String,
+    pub email: String,
+    pub profile_picture: Option<Vec<u8>>,
+    pub password_hash: String,
 }
 
-#[derive(Queryable, Selectable, Identifiable, Debug, PartialEq)]
+#[derive(Serialize, Queryable, Selectable, Identifiable, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(table_name = reports)]
 pub struct Report {
@@ -31,15 +32,15 @@ pub struct Report {
     pub description: Option<String>,
 }
 
-#[derive(Insertable, Debug, PartialEq)]
+#[derive(Deserialize, Insertable, Debug, PartialEq)]
 #[diesel(table_name = reports)]
-pub struct NewReport<'a> {
+pub struct NewReport {
     pub owner_id: i64,
-    pub title: &'a str,
-    pub description: Option<&'a str>,
+    pub title: String,
+    pub description: Option<String>,
 }
 
-#[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
+#[derive(Serialize, Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(Report))]
 #[diesel(table_name = report_proof)]
@@ -49,15 +50,15 @@ pub struct ReportProof {
     pub data: Vec<u8>,
 }
 
-#[derive(Insertable, Associations, Debug, PartialEq)]
+#[derive(Deserialize, Insertable, Associations, Debug, PartialEq)]
 #[diesel(belongs_to(Report))]
 #[diesel(table_name = report_proof)]
-pub struct NewReportProof<'a> {
+pub struct NewReportProof {
     pub report_id: i64,
-    pub data: &'a [u8],
+    pub data: Vec<u8>,
 }
 
-#[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
+#[derive(Serialize, Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(User, foreign_key = borrower_id))]
 #[diesel(belongs_to(Report))]
@@ -70,7 +71,7 @@ pub struct ReportAccess {
     pub write_access: bool,
 }
 
-#[derive(Insertable, Associations, Debug, PartialEq)]
+#[derive(Deserialize, Insertable, Associations, Debug, PartialEq)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(Report))]
 #[diesel(table_name = report_access)]
@@ -97,8 +98,8 @@ pub struct ReportLineItem {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(Report))]
 #[diesel(table_name = report_line_items)]
-pub struct NewReportLineItem<'a> {
+pub struct NewReportLineItem {
     pub report_id: i64,
-    pub item_name: &'a str,
+    pub item_name: String,
     pub item_price_usd: diesel::data_types::Cents,
 }

@@ -7,21 +7,21 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
-pub struct NewReportBuilder<'a> {
+pub struct NewReportBuilder {
     owner_id: Option<i64>,
-    title: Option<&'a str>,
-    description: Option<&'a str>,
+    title: Option<String>,
+    description: Option<String>,
 }
 
-impl<'a> Builder<NewReport<'a>> for NewReportBuilder<'a> {
-    type Output = NewReport<'a>;
+impl Builder<NewReport> for NewReportBuilder {
+    type Output = NewReport;
 
     fn build(&self) -> Option<Self::Output> {
-        if let (Some(owner_id), Some(title)) = (self.owner_id, self.title) {
+        if let (Some(owner_id), Some(title)) = (self.owner_id, self.title.clone()) {
             Some(Self::Output {
                 owner_id,
                 title,
-                description: self.description,
+                description: self.description.clone(),
             })
         } else {
             None
@@ -29,25 +29,25 @@ impl<'a> Builder<NewReport<'a>> for NewReportBuilder<'a> {
     }
 }
 
-impl<'a> NewReportBuilder<'a> {
-    pub fn owner(&'a mut self, owner: &User) -> &'a mut Self {
+impl NewReportBuilder {
+    pub fn owner(&mut self, owner: &User) -> &mut Self {
         self.owner_id = Some(owner.id);
         self
     }
 
-    pub fn owner_id(&'a mut self, owner_id: i64) -> &'a mut Self {
+    pub fn owner_id(&mut self, owner_id: i64) -> &mut Self {
         self.owner_id = Some(owner_id);
         self
     }
 
-    pub fn title(&'a mut self, title: &'a str) -> &'a mut Self {
+    pub fn title(&mut self, title: String) -> &mut Self {
         self.title = Some(title);
         self
     }
 }
 
-impl<'a> HasBuilder<NewReportBuilder<'a>, Self> for NewReport<'a> {}
-impl<'a> NewReport<'a> {
+impl HasBuilder<NewReportBuilder, Self> for NewReport {}
+impl NewReport {
     pub fn insert(&self, conn: &mut PgConnection) -> Result<Report> {
         use crate::schema::reports::dsl;
 
@@ -59,8 +59,16 @@ impl<'a> NewReport<'a> {
     }
 }
 
-impl<'a> HasBuilder<NewReportBuilder<'a>, NewReport<'a>> for Report {}
-impl<'a> Report {
+impl HasBuilder<NewReportBuilder, NewReport> for Report {}
+impl Report {
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::reports::dsl;
+
+        diesel::delete(dsl::reports).execute(conn)?;
+
+        Ok(())
+    }
+
     pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::reports::dsl;
 
@@ -80,32 +88,24 @@ impl<'a> Report {
         Ok(res)
     }
 
-    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::reports::dsl;
 
-        let res = diesel::delete(dsl::reports.filter(dsl::id.eq(id))).execute(conn)?;
+        let res = diesel::delete(dsl::reports.filter(dsl::id.eq(id))).get_result(conn)?;
 
         Ok(res)
     }
 
-    pub fn clear(conn: &mut PgConnection) -> Result<()> {
-        use crate::schema::reports::dsl;
-
-        diesel::delete(dsl::reports).execute(conn)?;
-
-        Ok(())
-    }
-
     pub fn update(
-        &self,
+        id: i64,
         owner_id: i64,
-        title: &'a str,
-        description: Option<&'a str>,
+        title: String,
+        description: Option<String>,
         conn: &mut PgConnection,
     ) -> Result<Self> {
         use crate::schema::reports::dsl;
 
-        let res = diesel::update(self)
+        let res = diesel::update(dsl::reports.filter(dsl::id.eq(id)))
             .set((
                 dsl::owner_id.eq(owner_id),
                 dsl::title.eq(title),
@@ -116,45 +116,13 @@ impl<'a> Report {
         Ok(res)
     }
 
-    pub fn replace(&self, new: &NewReport, conn: &mut PgConnection) -> Result<Self> {
-        self.update(new.owner_id, new.title, new.description, conn)
-    }
-
-    pub fn update_owner_id(&self, owner_id: i64, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::reports::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::owner_id.eq(owner_id))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_owner(&self, owner: &User, conn: &mut PgConnection) -> Result<Self> {
-        self.update_owner_id(owner.id, conn)
-    }
-
-    pub fn update_title(&self, title: &'a str, conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::reports::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::title.eq(title))
-            .get_result(conn)?;
-
-        Ok(res)
-    }
-
-    pub fn update_description(
-        &self,
-        description: &'a str,
-        conn: &mut PgConnection,
-    ) -> Result<Self> {
-        use crate::schema::reports::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::description.eq(Some(description)))
-            .get_result(conn)?;
-
-        Ok(res)
+    pub fn replace(id: i64, new: &NewReport, conn: &mut PgConnection) -> Result<Self> {
+        Self::update(
+            id,
+            new.owner_id,
+            new.title.clone(),
+            new.description.clone(),
+            conn,
+        )
     }
 }

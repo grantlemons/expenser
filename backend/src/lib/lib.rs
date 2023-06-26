@@ -2,6 +2,7 @@ pub mod database;
 mod models;
 mod schema;
 
+pub use model_implementations::user::UserInfo;
 pub use models::*;
 
 mod model_implementations {

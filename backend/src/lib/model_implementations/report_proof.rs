@@ -7,16 +7,16 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 
 #[derive(Default, Debug)]
-pub struct NewReportProofBuilder<'a> {
+pub struct NewReportProofBuilder {
     report_id: Option<i64>,
-    data: Option<&'a [u8]>,
+    data: Option<Vec<u8>>,
 }
 
-impl<'a> Builder<NewReportProof<'a>> for NewReportProofBuilder<'a> {
-    type Output = NewReportProof<'a>;
+impl Builder<NewReportProof> for NewReportProofBuilder {
+    type Output = NewReportProof;
 
     fn build(&self) -> Option<Self::Output> {
-        if let (Some(report_id), Some(data)) = (self.report_id, self.data) {
+        if let (Some(report_id), Some(data)) = (self.report_id, self.data.clone()) {
             Some(Self::Output { report_id, data })
         } else {
             None
@@ -24,25 +24,25 @@ impl<'a> Builder<NewReportProof<'a>> for NewReportProofBuilder<'a> {
     }
 }
 
-impl<'a> NewReportProofBuilder<'a> {
-    pub fn report(&'a mut self, report: &Report) -> &'a mut Self {
+impl NewReportProofBuilder {
+    pub fn report(&mut self, report: &Report) -> &mut Self {
         self.report_id = Some(report.id);
         self
     }
 
-    pub fn report_id(&'a mut self, report_id: i64) -> &'a mut Self {
+    pub fn report_id(&mut self, report_id: i64) -> &mut Self {
         self.report_id = Some(report_id);
         self
     }
 
-    pub fn data(&'a mut self, data: &'a [u8]) -> &'a mut Self {
+    pub fn data(&mut self, data: Vec<u8>) -> &mut Self {
         self.data = Some(data);
         self
     }
 }
 
-impl<'a> HasBuilder<NewReportProofBuilder<'a>, Self> for NewReportProof<'a> {}
-impl<'a> NewReportProof<'a> {
+impl HasBuilder<NewReportProofBuilder, Self> for NewReportProof {}
+impl NewReportProof {
     pub fn insert(&self, conn: &mut PgConnection) -> Result<ReportProof> {
         use crate::schema::report_proof::dsl;
 
@@ -54,8 +54,24 @@ impl<'a> NewReportProof<'a> {
     }
 }
 
-impl<'a> HasBuilder<NewReportProofBuilder<'a>, NewReportProof<'a>> for ReportProof {}
-impl<'a> ReportProof {
+impl HasBuilder<NewReportProofBuilder, NewReportProof> for ReportProof {}
+impl ReportProof {
+    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_proof::dsl;
+
+        diesel::delete(dsl::report_proof).execute(conn)?;
+
+        Ok(())
+    }
+
+    pub fn clear_by_report(report_id: i64, conn: &mut PgConnection) -> Result<()> {
+        use crate::schema::report_proof::dsl;
+
+        diesel::delete(dsl::report_proof.filter(dsl::report_id.eq(report_id))).execute(conn)?;
+
+        Ok(())
+    }
+
     pub fn get_by_id(id: i64, conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_proof::dsl;
 
@@ -75,57 +91,54 @@ impl<'a> ReportProof {
         Ok(res)
     }
 
-    pub fn delete(id: i64, conn: &mut PgConnection) -> Result<usize> {
+    pub fn get_by_path(path_ids: (i64, i64), conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_proof::dsl;
 
-        let res = diesel::delete(dsl::report_proof.filter(dsl::id.eq(id))).execute(conn)?;
+        let res = dsl::report_proof
+            .filter(dsl::report_id.eq(path_ids.0))
+            .filter(dsl::id.eq(path_ids.1))
+            .first(conn)?;
 
         Ok(res)
     }
 
-    pub fn clear(conn: &mut PgConnection) -> Result<()> {
+    pub fn delete(path_ids: (i64, i64), conn: &mut PgConnection) -> Result<Self> {
         use crate::schema::report_proof::dsl;
 
-        diesel::delete(dsl::report_proof).execute(conn)?;
-
-        Ok(())
-    }
-
-    pub fn update(&self, report_id: i64, data: &'a [u8], conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_proof::dsl;
-
-        let res = diesel::update(self)
-            .set((dsl::report_id.eq(report_id), dsl::data.eq(data)))
-            .get_result(conn)?;
+        let res = diesel::delete(
+            dsl::report_proof
+                .filter(dsl::report_id.eq(path_ids.0))
+                .filter(dsl::id.eq(path_ids.1)),
+        )
+        .get_result(conn)?;
 
         Ok(res)
     }
 
-    pub fn replace(&self, new: &NewReportProof, conn: &mut PgConnection) -> Result<Self> {
-        self.update(new.report_id, new.data, conn)
-    }
-
-    pub fn update_report_id(&self, report_id: i64, conn: &mut PgConnection) -> Result<Self> {
+    pub fn update(
+        path_ids: (i64, i64),
+        report_id: i64,
+        data: &[u8],
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
         use crate::schema::report_proof::dsl;
 
-        let res = diesel::update(self)
-            .set(dsl::report_id.eq(report_id))
-            .get_result(conn)?;
+        let res = diesel::update(
+            dsl::report_proof
+                .filter(dsl::report_id.eq(path_ids.0))
+                .filter(dsl::id.eq(path_ids.1)),
+        )
+        .set((dsl::report_id.eq(report_id), dsl::data.eq(data)))
+        .get_result(conn)?;
 
         Ok(res)
     }
 
-    pub fn update_report(&self, report: &Report, conn: &mut PgConnection) -> Result<Self> {
-        self.update_report_id(report.id, conn)
-    }
-
-    pub fn update_data(&self, data: &'a [u8], conn: &mut PgConnection) -> Result<Self> {
-        use crate::schema::report_proof::dsl;
-
-        let res = diesel::update(self)
-            .set(dsl::data.eq(data))
-            .get_result(conn)?;
-
-        Ok(res)
+    pub fn replace(
+        path_ids: (i64, i64),
+        new: &NewReportProof,
+        conn: &mut PgConnection,
+    ) -> Result<Self> {
+        Self::update(path_ids, new.report_id, &new.data, conn)
     }
 }
