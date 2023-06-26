@@ -1,3 +1,8 @@
+use leptos::*;
+
 fn main() {
-    println!("Hello, world!");
+    leptos::mount_to_body(|cx| view! { cx, <App/> })
 }
+
+#[component]
+fn App(cx: Scope) -> impl IntoView {}
