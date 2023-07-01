@@ -22,16 +22,15 @@ fn main() {
 fn App(cx: Scope) -> impl IntoView {
     view! { cx,
       <Router>
-        <nav>
-          /* ... */
-        </nav>
+        "hello, world!"
         <main>
           <Routes>
-            <Route path="/signin" view=|cx| view! { cx, <SignInPage/>}/>
-            <Route path="/dashboard" view=|cx| view! { cx, <DashboardPage/>}/>
-            <Route path="/report/:id" view=|cx| view! { cx, <ReportPage/>}/>
-            <Route path="/user/:id" view=|cx| view! { cx, <UserPage/>}/>
-            /* ... */
+            <Route path="" view=|cx| view! { cx, <Redirect path="/signin"/> }/>
+            <Route path="/signin" view=|cx| view! { cx, <SignInPage/> }/>
+            <Route path="/dashboard" view=|cx| view! { cx, <DashboardPage/> }/>
+            <Route path="/report/:id" view=|cx| view! { cx, <ReportPage/> }/>
+            <Route path="/user/:id" view=|cx| view! { cx, <UserPage/> }/>
+            <Route path="/*" view=|cx| view! { cx, "Page not found" }/>
           </Routes>
         </main>
       </Router>
